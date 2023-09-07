@@ -40,7 +40,7 @@ class HttpClient {
             ),
             json_encode($body['body'])
         ) -> then(
-            function (ResponseInterface $response) {
+            function($response) {
                 $code = $response -> getStatusCode();
                 if($code != 200)
                     throw new APIException($code, 'LEGACY_API_ERROR', $response -> getBody());
