@@ -6,6 +6,7 @@
         }
     ],
     "require": {
-        "infinex-exchange/common": "dev-main"
+        "infinex-exchange/common": "dev-main",
+        react/http": "^1.8"
     }
 }
