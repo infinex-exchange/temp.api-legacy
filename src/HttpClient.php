@@ -33,7 +33,7 @@ class HttpClient {
         if(isset($body['origPath']))
             $path = $body['origPath'];
         
-        return $browser -> post(
+        return $this -> browser -> post(
             LEGACY_API_URL.$path,
             array(
                 'Content-Type' => 'application/json'
