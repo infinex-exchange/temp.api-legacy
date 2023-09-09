@@ -39,7 +39,7 @@ class HttpClient {
             array(
                 'Content-Type' => 'application/json'
             ),
-            json_encode($body['body'])
+            json_encode($body['body'], JSON_UNESCAPED_SLASHES)
         ) -> then(
             function($response) {
                 $code = $response -> getStatusCode();
