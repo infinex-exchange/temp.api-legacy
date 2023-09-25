@@ -37,13 +37,6 @@ class App extends Infinex\App\App {
         
         $this -> client -> stop() -> then(
             function() use($th) {
-                return Promise\all([
-                    $th -> auth -> stop(),
-                    $th -> router -> stop()
-                ]);
-            }
-        ) -> then(
-            function() use($th) {
                 $th -> parentStop();
             }
         );
