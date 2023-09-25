@@ -64,6 +64,10 @@ class HttpClient {
                 'Content-Type' => 'application/json'
             ),
             json_encode($body['body'], JSON_UNESCAPED_SLASHES)
+        ) -> catch(
+            function (\Exception $e) {
+                throw new Error('LEGACY_API_UNAVAILABLE', 'Connection with legacy API failed');
+            }
         ) -> then(
             function($response) {
                 $code = $response -> getStatusCode();
@@ -73,22 +77,6 @@ class HttpClient {
                 return [
                     'status' => 200,
                     'body' => json_decode($response -> getBody(), true)
-                ];
-            }
-        ) -> catch(
-            function (\Exception $e) {
-                throw new Error('LEGACY_API_UNAVAILABLE', 'Connection with legacy API failed');
-            }
-        ) -> catch(
-            function(Error $e) {
-                return [
-                    'status' => $e -> getCode(),
-                    'body' => [
-                        'error' => [
-                            'code' => $e -> getStrCode(),
-                            'msg' => $e -> getMessage()
-                        ]
-                    ]
                 ];
             }
         );
