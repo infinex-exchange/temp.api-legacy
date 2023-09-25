@@ -1,41 +1,65 @@
 <?php
 
+use Infinex\Exceptions\Error;
 use React\Http\Browser;
-use Infinex\API\APIException;
 
 class HttpClient {
     private $loop;
     private $log;
+    private $amqp;
+    private $baseUrl;
+    
     private $browser;
     
-    function __construct($loop, $log) {
+    function __construct($loop, $log, $amqp, $baseUrl) {
         $this -> loop = $loop;
         $this -> log = $log;
+        $this -> amqp = $amqp;
+        $this -> baseUrl = $baseUrl;
         
         $this -> browser = new Browser(null, $loop);
         
-        $this -> log -> debug('Initialized legacy API client');
+        $this -> log -> debug('Initialized HTTP client');
     }
     
-    public function bind($amqp) {
+    public function start() {
         $th = $this;
         
-        $amqp -> method(
-            'api_legacy',
+        return $this -> amqp -> method(
+            'rest',
             function($body) use($th) {
                 return $th -> request($body);
+            }
+        ) -> then(
+            function() use($th) {
+                $th -> log -> info('Started HTTP client');
+            }
+        ) -> catch(
+            function($e) use($th) {
+                $th -> log -> error('Failed to start HTTP client: '.((string) $e));
+                throw $e;
             }
         );
     }
     
-    public function request($body) {
-        $path = $body['path'];
-        if(isset($body['origPath']))
-            $path = $body['origPath'];
+    public function stop() {
+        $th = $this;
         
+        return $this -> amqp -> unreg('rest') -> then(
+            function() use ($th) {
+                $th -> log -> info('Stopped HTTP client');
+            }
+        ) -> catch(
+            function($e) use($th) {
+                $th -> log -> error('Failed to stop HTTP client: '.((string) $e));
+            }
+        );
+    }
+    
+    private function request($body) {
         return $this -> browser -> request(
             $body['method'],
-            LEGACY_API_URL.$path,
+            LEGACY_API_URL.$body['origPath'],
             array(
                 'Content-Type' => 'application/json'
             ),
@@ -44,7 +68,7 @@ class HttpClient {
             function($response) {
                 $code = $response -> getStatusCode();
                 if($code != 200)
-                    throw new APIException($code, 'LEGACY_API_ERROR', $response -> getBody());
+                    throw new Error('LEGACY_API_ERROR', $response -> getBody());
                 
                 return [
                     'status' => 200,
@@ -53,10 +77,10 @@ class HttpClient {
             }
         ) -> catch(
             function (\Exception $e) {
-                throw new APIException(500, 'LEGACY_API_UNAVAILABLE', 'Connection with legacy API failed');
+                throw new Error('LEGACY_API_UNAVAILABLE', 'Connection with legacy API failed');
             }
         ) -> catch(
-            function(APIException $e) {
+            function(Error $e) {
                 return [
                     'status' => $e -> getCode(),
                     'body' => [
