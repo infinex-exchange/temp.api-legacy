@@ -59,7 +59,7 @@ class HttpClient {
     private function request($body) {
         return $this -> browser -> request(
             $body['method'],
-            LEGACY_API_URL.$body['origPath'],
+            LEGACY_API_URL.$body['path'],
             array(
                 'Content-Type' => 'application/json'
             ),
